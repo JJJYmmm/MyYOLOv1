@@ -10,8 +10,7 @@
 
 ​	最后将1470的向量reshape成7\*7\*30.
 
-![image-20230216131611641](C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230216131611641.png)
-
+![image](https://user-images.githubusercontent.com/92386084/219594977-9cdb6dca-a3b9-4e02-b6f7-887fc329cb0a.png)
 ### 1.2输出解析
 
 ​	输出为SxSx(B*5+C)的tensor,其中SxS为grid cell的个数.
@@ -22,7 +21,7 @@
 $$
 P(class)=P(class|obj)*confidence
 $$
-![image-20230216132659702](C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230216132659702.png)
+![image](https://user-images.githubusercontent.com/92386084/219595016-ef07f372-356a-4a9c-b362-3efad01bc2ef.png)
 
 ### 1.3损失函数
 
@@ -48,7 +47,7 @@ $$
 
 - 最后一部分是类别预测的误差.对于那些预测物体的grid cell 计算各个概率的平方和误差
 
-![image-20230216133352645](C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230216133352645.png)
+![image](https://user-images.githubusercontent.com/92386084/219595050-177d0274-529f-4f85-85b3-681e1682544e.png)
 
 > loss中$\lambda$是各个损失的权值,比如应该更关注预测物体的box的误差 $\lambda_{coord}$而相对忽略不预测物体的box误差$\lambda_{noobj}$
 
@@ -62,7 +61,7 @@ $$
 
 ​	官方的YOLOv1的主干网络是参考了GoogLeNet设计的（没有inception结构），这里我们直接替换成ResNet18。关于ResNet18的网络结构，如下图所示
 
-![image-20230216135227066](C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230216135227066.png)
+![image](https://user-images.githubusercontent.com/92386084/219595067-98af2683-3916-4dae-9bae-1de4223dbf6f.png)
 
 > ResNet18网络更轻，使用了诸如residual connection、batch normalization等结构，性能上要更强于原先的backbone网络。这里，我们没必要换更大的ResNet网络，如ResNet50、101等，18即可满足要求。
 
@@ -70,8 +69,7 @@ $$
 
 ​	对于给定输入的416x416x3的图像，经过ResNet18网络处理后，最后会输出一张13x13x512的特征图。这里，我们添加一个Neck结构，对特征图中的信息进行更好地处理，这里，我们选择性价比极高的SPP
 
-![image-20230216135425604](C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230216135425604.png)
-
+![image](https://user-images.githubusercontent.com/92386084/219595089-df748c5e-0e39-4104-8e78-40b82054393f.png)
 > 注意，SPP接受的输入特征图大小是13x13x512，经过四个maxpooling分支处理后，再汇合到一起，那么得到的是一个13x13x2048的特征图，这里，我们会再接一个1x1的卷积层（conv1x1+BN+LeakyReLU）将通道压缩一下，这个1x1的卷积层没有在图中体现出来。
 >
 > 最终Neck部分的输入同样是13x13x512的特征图。
@@ -80,7 +78,7 @@ $$
 
 ​	官方的YOLOv1中这一部分使用了全连接层，也就是先将特征图flatten成一维向量，然后接全连接层得到4096维的一维向量。这里，我们抛掉flatten操作，而是在SPP输出的13x13x512的特征图上使用若干层卷积来处理，类似于RetinaNet那样。这里，我们使用非常简单的1x1卷积和3x3卷积重复堆叠的方式，如下图所示：
 
-![image-20230216135520838](C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230216135520838.png)
+![image](https://user-images.githubusercontent.com/92386084/219595120-68968f45-af3c-4d3b-9e2a-0c49dcc5392b.png)
 
 **④改进prediction层**
 
@@ -88,7 +86,7 @@ $$
 
 > 注意!!! 这里，每个grid处只预测一个bbox，而不是B个
 
-![image-20230216135613907](C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230216135613907.png)
+![image](https://user-images.githubusercontent.com/92386084/219595152-c73e2ad5-8407-4708-95c2-abbaf5f1c451.png)
 
 ​	如上图所示，objectness分支我们使用sigmoid来输出，class分支则用softmax来输出，这三个预测，我们稍微展开讲一下。
 
@@ -108,7 +106,7 @@ a) 由于偏移量$c_x,c_y$是介于01范围内的数，因此，其本身就是
 
 这里，我们也采用同样的办法，对于偏移量部分，我们使用sigmoid来输出，并将其符号改为 $t_x,t_y$ 
 
-![img](https://pic1.zhimg.com/v2-be0f632654dfb39d06780e54c6df3ad4_b.jpg)
+![image](https://user-images.githubusercontent.com/92386084/219595181-73166823-4750-499b-bb44-36a7bf5399ee.png)
 
 b) 边界框的宽高显然是个非负数，而线性输出不能保证这一点，输出一个负数，是没有意义的。一种解决办法是**约束输出为非负，如用ReLU函数**，但这种办法就会隐含一个约束条件，这并不利于优化，而且ReLU的0区间无法回传梯度；另一个办法就是使用exp-log方法，具体来说，就是将 ，w，hw，hw，h 用log函数来处理一下：
 
@@ -124,11 +122,11 @@ $h=exp(t_h) $
 
 **⑤损失函数**
 
-![image-20230216140726820](C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230216140726820.png)
+![image](https://user-images.githubusercontent.com/92386084/219595219-1c1a7583-d3b8-463e-a10f-aed91b20dd6a.png)
 
 ### 1.5最终网络
 
-![image-20230216140920400](C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230216140920400.png)
+![image](https://user-images.githubusercontent.com/92386084/219595239-859d3e4b-399d-4036-b602-daa23db97010.png)
 
 > 这里B=1，S=13
 
@@ -146,7 +144,7 @@ $h=exp(t_h) $
 - **models**文件夹存放了yolov1的网络实现，**loss.py**存放了损失函数的实现
 - **utils**文件夹存放了**计算模型参数容量**的工具
 
-<img src="C:\Users\Axuanz\AppData\Roaming\Typora\typora-user-images\image-20230217162257465.png" alt="image-20230217162257465" style="zoom: 50%;" />
+![image](https://user-images.githubusercontent.com/92386084/219595296-4a184c28-ece5-4dca-b4d4-8e02a064365d.png)
 
 ### 项目依赖
 
