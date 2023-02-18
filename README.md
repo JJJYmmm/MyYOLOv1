@@ -167,3 +167,46 @@ $h=exp(t_h) $
 ### 开源代码
 
 见[JJJYMMM的github](https://github.com/JJJYmmm/MyYOLOv1)
+
+### 运行效果
+
+#### 训练：**train.py**
+
+1.可选参数
+
+![image](https://user-images.githubusercontent.com/92386084/219820524-fdb8dd2c-32f4-43db-a5e2-8f73e24f4eb3.png)
+
+2.训练过程
+
+![image](https://user-images.githubusercontent.com/92386084/219820535-e511862a-e80d-41e9-9192-220feea41d8c.png)
+
+> 从头开始训练
+>
+> python train.py         --cuda         -d voc         -ms         -bs 64         -accu 4         --lr 0.001         --max_epoch 150   --lr_epoch 90 120
+
+> keep-training（继续训练）
+>
+> python train.py         --cuda         -d voc         -ms         -bs 64         -accu 4         --lr 0.001         --max_epoch 150   --lr_epoch 90 120 --start_epoch 120 -r ~/d2l/myYOLO/weights/voc/yolo/yolo_epoch_111_64.3.pth
+
+#### 测试：**test.py**
+
+1.可选参数如下
+
+![image](https://user-images.githubusercontent.com/92386084/219820500-0d2ab572-08c2-4d33-ba21-bfa72b55a2da.png)
+
+2.预测效果
+
+![image](https://user-images.githubusercontent.com/92386084/219820455-ea520560-8072-4892-adc2-f9c0c9f02cf5.png)
+
+
+![image](https://user-images.githubusercontent.com/92386084/219820442-81015d3e-145e-45b7-ade5-b9fc5a6e7e77.png)
+
+> python test.py --cuda -d voc --weight weights/voc/yolo/yolo.pt
+
+#### 评估：**eval.py**
+
+1.评估结果如下，在voc2007测试集上mAP=0.6632，大于原论文yolov1的mAP=0.634
+
+![image](https://user-images.githubusercontent.com/92386084/219820422-763887d6-dae1-4b74-b361-7d6e0cdcc707.png)
+
+> python eval.py --cuda -d voc --weight 权重文件路径 -size 输入图像尺寸
